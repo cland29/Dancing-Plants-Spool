@@ -4,7 +4,7 @@ HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
-SERVER = "192.168.1.125"
+SERVER = "10.10.1.84"#"192.168.1.125"
 ADDR = (SERVER, PORT)
 
 def main():
@@ -12,9 +12,8 @@ def main():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(ADDR)
     send(client, "Hello World!")
-    send(client, input())
-
-    send(client, input())
+    for i in range(10):
+        send(client, "GetPosition")
     send(client, DISCONNECT_MESSAGE)
 
 def send(client, msg):
