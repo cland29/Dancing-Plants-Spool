@@ -25,11 +25,14 @@ def handle_client(conn, addr):
     connected = True
     while connected:
         msg_length = conn.recv(HEADER).decode(FORMAT)
-        msg_length = int(msg_length)
-        msg = conn.recv(msg_length).decode(FORMAT)
-        print(f"[{addr}] {msg}")
-        if msg == DISCONNECT_MESSAGE:
-            connected = False
+        if msg_length:
+
+            msg_length = int(msg_length)
+            msg = conn.recv(msg_length).decode(FORMAT)
+            print(f"[{addr}] {msg}")
+            if msg == DISCONNECT_MESSAGE:
+                connected = False
+            conn.send("Msg received".encode(FORMAT))
 
     conn.close()
 
@@ -37,13 +40,17 @@ def handle_client(conn, addr):
 def start_server(server: socket):
     server.listen()
     print(f"[LISTENING] SERVER is listening on {SERVER}")
+    thread = threading.Thread(target=handle_client, args=(conn, addr))
+    thread.start()
+
     while True:
         conn, addr = server.accept()
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
         print(f"[ACTIVE CONNECTIONS] {threading.activeCount() - 1}")
 
-
+def run_pyqt_interface():
+    print()
 
 
 
