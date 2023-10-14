@@ -3,6 +3,7 @@ import socket
 import threading
 import time
 import math
+import matplotlib.pyplot as plt
 
 HEADER = 64
 PORT = 5050
@@ -10,6 +11,8 @@ SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
+
+
 def main():
     print("hello world")
 
@@ -25,6 +28,9 @@ def main():
 def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected")
 
+    x_val = [10] * 50
+    y_val = [0] * 50
+
     connected = True
     while connected:
         msg_length = conn.recv(HEADER).decode(FORMAT)
@@ -33,7 +39,12 @@ def handle_client(conn, addr):
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
             if (msg == "GetPosition"):
-                conn.send(str(-700 + 700 * math.sin((time.time()%36) / 18 * math.pi)).encode(FORMAT))
+                conn.send(str(-200 + 200 * math.sin((time.time()%18) / 9 * math.pi)).encode(FORMAT))
+
+                plt.plot(x_val,y_val)
+                plt.show()
+
+
             else:
                 print(f"[{addr}] {msg}")
                 if msg == DISCONNECT_MESSAGE:

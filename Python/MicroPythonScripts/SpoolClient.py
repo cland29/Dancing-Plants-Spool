@@ -6,6 +6,8 @@ import machine
 from machine import PWM, Pin
 import sys
 import socket
+import _thread
+import utime
 #import ipaddress
 #import wifi
 dance_router = {"ssid": 'NETGEAR80', 'password': 'yellowwater460'}
@@ -19,9 +21,60 @@ DISCONNECT_MESSAGE = "!DISCONNECT"
 SERVER = "192.168.1.2"
 ADDR = (SERVER, PORT)
 
+program_finished = False
+
 
 motor1 = machine.PWM(Pin(1))
 motor1.freq(50)
+
+set_point = 0
+a_lock = _thread.allocate_lock()
+
+def set_set_point(new_set_point):
+    print("set attempting to acquire!")
+    if(a_lock.acquire()):
+        print("set acquired!")
+        global set_point
+        set_point = new_set_point
+        print(f"Set point is now {set_point}")
+        a_lock.release()
+        print("set released!")
+
+def get_set_point():
+    cur_set_point = 0
+    print("get attempting to acquire!")
+    if(a_lock.acquire(True, 0.1)):
+        print("get acquire!")
+        global set_point
+        cur_set_point = set_point
+        a_lock.release()
+        print("get release!")
+        return cur_set_point
+    else:
+        return None
+
+
+def updateMotorValues():
+
+        goal = set_point#get_set_point()
+
+        setMotor((goal - Qtr_Cntr) / 100 + 0.1)
+        print(goal, Qtr_Cntr, (goal - Qtr_Cntr) / 100 + 0.1)
+        
+    
+def updateMotorValuesThread():
+    print("Starting thread")
+    while not program_finished:
+        goal = set_point#get_set_point()
+        print(goal, type(goal))
+        if (goal is not None):
+            setMotor((goal - Qtr_Cntr) / 700)
+            print(goal, Qtr_Cntr, (goal - Qtr_Cntr) / 700)
+        else:
+            print("None!!")
+        utime.sleep(0.02)
+    setMotor(0.0)    
+
 
 
 
@@ -111,7 +164,7 @@ def connect_client():
         print("Sending Hello!") 
         send(client, "Hello World!")
         
-        for i in range(10):
+        for i in range(100):
             send(client, "GetPosition")
         setMotor(0.0)
         send(client, DISCONNECT_MESSAGE)
@@ -129,7 +182,10 @@ def send(client, msg):
     print(received_msg)
     if (msg == "GetPosition"):
         print(received_msg, Qtr_Cntr, float(received_msg) - Qtr_Cntr)
-        setMotor((float(received_msg) - Qtr_Cntr) / 400)
+        set_set_point(float(received_msg))
+        for i in range(20):
+            updateMotorValues()
+            utime.sleep(0.02)
     
 
 
@@ -145,8 +201,9 @@ def end_program(val):
 end_program_button = Button(18)
 
 def setMotor(motorPower):
-    if (motorPower > 0.5): motorPower = 0.5
-    if (motorPower < -0.25): motorPower = -0.25
+    #print(f"setting motor to: {motorPower}")
+    if (motorPower > 0.4): motorPower = 0.4
+    if (motorPower < -0.30): motorPower = -0.30
     
     max_duty_cycle_length = 65025
     freq = 50;
@@ -159,9 +216,16 @@ def setMotor(motorPower):
 #end_program_button.when_pressed = end_program("test")
 
 try:
+    #thread1 = _thread.start_new_thread(updateMotorValues, ())
+    
     ip = connect(dance_router)
+    
     print(type(ip))
     connect_client()
+    setMotor(0.0)
+    
+    #program_finished = True
+    
     #connection = open_socket(ip)
     #serve(connection)
 except KeyboardInterrupt:
