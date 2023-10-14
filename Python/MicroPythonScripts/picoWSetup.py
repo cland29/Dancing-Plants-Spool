@@ -10,10 +10,89 @@ import sys
 
 ssid = 'NETGEAR80'
 password = 'yellowwater460'
+home_router = {"ssid": 'Linksys03016', 'password': 'q21ruweiq3'}
+#ssid = home_router.get("ssid")
+#password = home_router.get("password")
 program_running = True
 
-motor1 = machine.PWM(Pin(7))
+motor1 = machine.PWM(Pin(1))
 motor1.freq(50)
+
+top_green = PWM(Pin(3))
+top_yellow = PWM(Pin(5))
+top_red = PWM(Pin(8))
+
+bottom_green = PWM(Pin(10))
+bottom_yellow = PWM(Pin(13))
+bottom_red = PWM(Pin(15))
+
+
+
+LED_list = [top_green, top_yellow, top_red, bottom_green, bottom_yellow, bottom_red]
+
+
+def Enc_Handler(Source):
+    global Enc_Counter
+    global Qtr_Cntr
+    global Enc_A_State
+    global Enc_A_State_old
+    global Enc_B_State
+    global Enc_B_State_old
+    global error
+    #s = str(Source)  #useful for debugging and setup to see which pin triggered interupt
+    #print(s[4:6])
+        
+    Enc_A_State = Enc_Pin_A.value()  #Capture the current state of both A and B
+    Enc_B_State = Enc_Pin_B.value()
+    if Enc_A_State == Enc_A_State_old and Enc_B_State == Enc_B_State_old:  #Probably 'bounce" as there was a trigger but no change
+        error += 1  #add the error event to a variable - may by useful in debugging
+    elif (Enc_A_State == 1 and Enc_B_State_old == 0) or (Enc_A_State == 0 and Enc_B_State_old == 1):
+        # this will be clockwise rotation
+        # A   B-old
+        # 1 & 0 = CW rotation
+        # 0 & 1 = CW rotation
+        Enc_Counter += 1  #Increment counter by 1 - counts ALL transitions
+        Qtr_Cntr = round(Enc_Counter/4)  #Calculate a new 1/4 counter value
+    elif (Enc_A_State == 1 and Enc_B_State_old == 1) or (Enc_A_State == 0 and Enc_B_State_old == 0):
+        # this will be counter-clockwise rotation
+        # A   B-old
+        # 1 & 1 = CCW rotation
+        # 0 & 0 = CCW rotation
+        Enc_Counter -= 1 # Decrement counter by 1 - counts ALL transitions
+        Qtr_Cntr = round(Enc_Counter/4)  #Calculate a new 1/4 counter value
+    else:  #if here, there is a combination we don't care about, ignore it, but track it for debugging
+        error += 1
+    Enc_A_State_old = Enc_A_State     # store the current encoder values as old values to be used as comparison in the next loop
+    Enc_B_State_old = Enc_B_State       
+
+
+#Configure the A channel and B channel pins and their associated interrupt handing
+Enc_Pin_A = machine.Pin(20,machine.Pin.IN,machine.Pin.PULL_DOWN)
+Enc_Pin_A.irq(trigger=machine.Pin.IRQ_RISING | machine.Pin.IRQ_FALLING, handler=Enc_Handler)
+Enc_Pin_B = machine.Pin(19,machine.Pin.IN,machine.Pin.PULL_DOWN)
+Enc_Pin_B.irq(trigger=machine.Pin.IRQ_RISING | machine.Pin.IRQ_FALLING, handler=Enc_Handler)
+
+#Preset some variables to useful and known values
+Enc_A_State_old = Enc_Pin_A.value()
+Enc_B_State_old = Enc_Pin_B.value()
+last_Enc_Counter = 0
+Enc_Counter = 0
+Last_Qtr_Cntr = 0
+Qtr_Cntr = 0
+error = 0
+
+
+
+
+
+
+
+for light in LED_list:
+    light.freq(2000)
+
+
+
+
 
 def connect() -> str:
     #Connect to WLAN
@@ -39,6 +118,7 @@ def connect() -> str:
         pico_led.toggle()
         sleep(0.1)
     pico_led.off()
+    LED_list[0].duty_u16(65535)
     return ip;
 
 def open_socket(ip):
@@ -52,7 +132,7 @@ def open_socket(ip):
     connection.listen(1)
     return connection
 
-def webpage(temperature, state):
+def webpage(temperature, encoder_value, state):
     #Template HTML
     html = f"""
             <!DOCTYPE html>
@@ -69,6 +149,9 @@ def webpage(temperature, state):
             <form action="./motorDown">
             <input type="submit" value="Move Motor Down" />
             </form>
+            <form action="./LowerPosition">
+            <input type="submit" value="Lower the connector" />
+            </form>
             <form action="./motorStop">
             <input type="submit" value="Stop Motor" />
             </form>
@@ -77,6 +160,7 @@ def webpage(temperature, state):
             </form>
             <p>LED is {state}</p>
             <p>Temperature is {temperature}</p>
+            <p>Encoder Value is {encoder_value}</p>
             </body>
             </html>
             """
@@ -131,7 +215,8 @@ def serve(connection):
             break
             
         temperature = pico_temp_sensor.temp
-        html = webpage(temperature, state)
+        encoder_val = Qtr_Cntr
+        html = webpage(temperature, encoder_val, state)
         client.send(html)
         client.close()
     print("Ending Socket Connection: " + str(connection))

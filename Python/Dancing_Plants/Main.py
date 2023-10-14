@@ -1,6 +1,8 @@
 import random
 import socket
 import threading
+import time
+import math
 
 HEADER = 64
 PORT = 5050
@@ -31,7 +33,7 @@ def handle_client(conn, addr):
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
             if (msg == "GetPosition"):
-                conn.send(str(random.randint(10, 20)).encode(FORMAT));
+                conn.send(str(-700 + 700 * math.sin((time.time()%36) / 18 * math.pi)).encode(FORMAT))
             else:
                 print(f"[{addr}] {msg}")
                 if msg == DISCONNECT_MESSAGE:
@@ -52,7 +54,8 @@ def start_server(server: socket):
         print(f"[ACTIVE CONNECTIONS] {threading.activeCount() - 1}")
 
 def run_pyqt_interface():
-    print()
+    pass
+    #print()
 
 
 
