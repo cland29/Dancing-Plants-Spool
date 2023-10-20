@@ -8,6 +8,7 @@ import sys
 import socket
 import _thread
 import utime
+import gc
 #import ipaddress
 #import wifi
 dance_router = {"ssid": 'NETGEAR80', 'password': 'yellowwater460'}
@@ -18,7 +19,7 @@ HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
-SERVER = "192.168.1.2"
+SERVER = "192.168.1.3"
 ADDR = (SERVER, PORT)
 
 program_finished = False
@@ -29,6 +30,28 @@ motor1.freq(50)
 
 set_point = 0
 a_lock = _thread.allocate_lock()
+enc_lock = _thread.allocate_lock()
+
+### TEST  LIGHTS ###
+top_green = PWM(Pin(3))
+top_yellow = PWM(Pin(5))
+top_red = PWM(Pin(8))
+
+bottom_green = PWM(Pin(10))
+bottom_yellow = PWM(Pin(13))
+bottom_red = PWM(Pin(15))
+
+
+
+LED_list = [top_green, top_yellow, top_red, bottom_green, bottom_yellow, bottom_red]
+
+for light in LED_list:
+    light.freq(2000)
+    
+duty_cycle = 65535
+### _____________________ ###
+
+def update_encoder_value():
 
 def set_set_point(new_set_point):
     print("set attempting to acquire!")
@@ -57,23 +80,28 @@ def get_set_point():
 def updateMotorValues():
 
         goal = set_point#get_set_point()
-
-        setMotor((goal - Qtr_Cntr) / 100 + 0.1)
-        print(goal, Qtr_Cntr, (goal - Qtr_Cntr) / 100 + 0.1)
+        motor_power = (goal - Qtr_Cntr) / 100 + 0.1
+        setMotor(motor_power)
+        print(f"Setpoint: {goal} Encoder Value: {Qtr_Cntr} Error: {goal - Qtr_Cntr} Motor Power: {motor_power}")
         
     
 def updateMotorValuesThread():
     print("Starting thread")
     while not program_finished:
+        updateMotorValues()
+        #print("I'm running!")
+        '''
         goal = set_point#get_set_point()
         print(goal, type(goal))
         if (goal is not None):
             setMotor((goal - Qtr_Cntr) / 700)
             print(goal, Qtr_Cntr, (goal - Qtr_Cntr) / 700)
         else:
-            print("None!!")
+            print("None!!")'''
         utime.sleep(0.02)
-    setMotor(0.0)    
+        gc.collect()
+    setMotor(0.0)
+    print("Thread tired, I'm done now")
 
 
 
@@ -164,7 +192,7 @@ def connect_client():
         print("Sending Hello!") 
         send(client, "Hello World!")
         
-        for i in range(100):
+        for i in range(20):
             send(client, "GetPosition")
         setMotor(0.0)
         send(client, DISCONNECT_MESSAGE)
@@ -172,6 +200,7 @@ def connect_client():
         print(f"An exception occured: {e}")
     
 def send(client, msg):
+    LED_list[3].duty_u16(duty_cycle)
     message = msg.encode(FORMAT)
     msg_length = len(message)
     send_length = str(msg_length).encode(FORMAT)
@@ -183,9 +212,11 @@ def send(client, msg):
     if (msg == "GetPosition"):
         print(received_msg, Qtr_Cntr, float(received_msg) - Qtr_Cntr)
         set_set_point(float(received_msg))
+        """
         for i in range(20):
             updateMotorValues()
-            utime.sleep(0.02)
+            utime.sleep(0.02)"""
+    LED_list[3].duty_u16(0)
     
 
 
@@ -216,7 +247,7 @@ def setMotor(motorPower):
 #end_program_button.when_pressed = end_program("test")
 
 try:
-    #thread1 = _thread.start_new_thread(updateMotorValues, ())
+    thread1 = _thread.start_new_thread(updateMotorValuesThread, ())
     
     ip = connect(dance_router)
     
@@ -224,7 +255,10 @@ try:
     connect_client()
     setMotor(0.0)
     
-    #program_finished = True
+    program_finished = True
+    
+    utime.sleep(0.2)
+    print("Goodnight all!")
     
     #connection = open_socket(ip)
     #serve(connection)

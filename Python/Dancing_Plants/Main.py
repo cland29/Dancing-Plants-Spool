@@ -39,10 +39,18 @@ def handle_client(conn, addr):
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
             if (msg == "GetPosition"):
+                '''
+                send_back = input()
+                if not send_back.isdigit():
+                    print("Please enter a numeric number")
+                    send_back = input()
+
+                conn.send(str(send_back).encode(FORMAT))
+                
+                '''
+
                 conn.send(str(-200 + 200 * math.sin((time.time()%18) / 9 * math.pi)).encode(FORMAT))
 
-                plt.plot(x_val,y_val)
-                plt.show()
 
 
             else:
