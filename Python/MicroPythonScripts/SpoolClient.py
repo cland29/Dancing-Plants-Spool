@@ -220,8 +220,9 @@ def connect_client():
             msg = msg_full.split(",")
             if not DISCONNECT_MESSAGE in msg:
                 #print(msg)
-                set_set_point(msg[-2])
+                set_set_point(int(msg[-2]))
                 print(get_set_point())
+                updateMotorValues()
             else:
                 break
         else:
