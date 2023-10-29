@@ -90,7 +90,7 @@ def updateMotorValues():
 
         goal = set_point#get_set_point()
         cur_pos = -Qtr_Cntr#get_encoder_value()
-        motor_power = (goal - cur_pos) / 100 + 0.1
+        motor_power = (goal - cur_pos) / 1000 - 0.1
         setMotor(-motor_power)
         print(f"Setpoint: {goal} Encoder Value: {cur_pos} Error: {goal - cur_pos} Motor Power: {motor_power}")
         
@@ -222,11 +222,12 @@ def connect_client():
                 #print(msg)
                 set_set_point(int(msg[-2]))
                 print(get_set_point())
-                updateMotorValues()
+                
             else:
                 break
         else:
-            pass 
+            pass
+        updateMotorValues()
     send(client, DISCONNECT_MESSAGE)
     setMotor(0.0)
     utime.sleep(1)

@@ -41,8 +41,8 @@ def handle_client(conn, addr):
         time.sleep(0.002)
     '''
     while connected:
-        for i in range(360):
-            pos = int(math.sin(i * math.pi/180) * 360 + 360)
+        for i in range(720):
+            pos = int(math.sin(i * math.pi/180) * 200 + 200)
             num = f"{pos:06}"
             print(f"{i}: Sending {num}")
             conn.send(f"{num},".encode(FORMAT))
