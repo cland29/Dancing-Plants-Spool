@@ -89,7 +89,7 @@ def get_set_point():
 def updateMotorValues():
 
         goal = set_point#get_set_point()
-        cur_pos = get_encoder_value()
+        cur_pos = -Qtr_Cntr#get_encoder_value()
         motor_power = (goal - cur_pos) / 100 + 0.1
         setMotor(motor_power)
         print(f"Setpoint: {goal} Encoder Value: {cur_pos} Error: {goal - cur_pos} Motor Power: {motor_power}")
