@@ -225,12 +225,15 @@ def connect_client():
             msg_full = client.recv(2048).decode()
             msg = msg_full.split(",")
             if not DISCONNECT_MESSAGE in msg:
-                print(msg)
+                #print(msg)
+                set_set_point(msg[-2])
+                print(get_set_point())
             else:
                 break
         else:
             pass 
     send(client, DISCONNECT_MESSAGE)
+    setMotor(0.0)
     utime.sleep(1)
     client.close()    
         
