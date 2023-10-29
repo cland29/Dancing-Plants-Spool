@@ -9,6 +9,7 @@ import socket
 import _thread
 import utime
 import gc
+import select
 #import ipaddress
 #import wifi
 dance_router = {"ssid": 'NETGEAR80', 'password': 'yellowwater460'}
