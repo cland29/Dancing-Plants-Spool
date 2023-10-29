@@ -183,6 +183,7 @@ def connect(wifi: dict) -> str:
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     print("WLAN Active:",wlan.active())
+    print(f"Attempting to connect on {ssid}")
     wlan.connect(wifi.get("ssid"), wifi.get('password'))
     count = 0
     while wlan.isconnected() == False:
@@ -193,7 +194,7 @@ def connect(wifi: dict) -> str:
     ip = wlan.ifconfig()[0]
     #wlan.ifconfig(('192.168.1.3', '255.255.255.0', '192.168.1.1', '8.8.8.8'))
     #ip = ('192.168.1.3', '255.255.255.0', '192.168.1.1', '8.8.8.8')[0]
-    print(f'Connected on {ip}')
+    print(f'Connected on {ip} on {ssid}')
     #ipv4 =  ipaddress.IPv4Address("192.168.1.42")
     #netmask =  ipaddress.IPv4Address("255.255.255.0")
     #gateway =  ipaddress.IPv4Address("192.168.1.1")
@@ -205,7 +206,7 @@ def connect(wifi: dict) -> str:
     return ip;
 
 def connect_client():
-    print("Trying to connect!")
+    print(f"Trying to connect to {ADDR}")
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client.connect(ADDR)
