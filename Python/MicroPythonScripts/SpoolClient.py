@@ -183,8 +183,10 @@ def connect(wifi: dict) -> str:
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     print("WLAN Active:",wlan.active())
+    ssid = wifi.get("ssid")
+    password = wifi.get("password")
     print(f"Attempting to connect on {ssid}")
-    wlan.connect(wifi.get("ssid"), wifi.get('password'))
+    wlan.connect(ssid, password)
     count = 0
     while wlan.isconnected() == False:
         print('Waiting for connection...' + str(count))
