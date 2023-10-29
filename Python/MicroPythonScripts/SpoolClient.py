@@ -210,15 +210,28 @@ def connect_client():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client.connect(ADDR)
-        print("Sending Hello!") 
-        send(client, "Hello World!")
-        
-        for i in range(20):
-            send(client, "GetPosition")
-        setMotor(0.0)
-        send(client, DISCONNECT_MESSAGE)
     except Exception as e:
         print(f"An exception occured: {e}")
+    print("connected!")
+    server_poll = select.poll()
+    server_poll.register(client)
+
+    while(True):    
+        poll_results = server_poll.poll(100)[0]
+        if (poll_results[1] == 5):
+            msg_full = client.recv(2048).decode()
+            msg = msg_full.split(",")
+            if not DISCONNECT_MESSAGE in msg:
+                print(msg)
+            else:
+                break
+        else:
+            pass 
+    send(client, DISCONNECT_MESSAGE)
+    utime.sleep(1)
+    client.close()    
+        
+    
     
 def send(client, msg):
     LED_list[3].duty_u16(duty_cycle)
