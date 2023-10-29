@@ -69,24 +69,18 @@ def get_encoder_value():
         
 
 def set_set_point(new_set_point):
-    print("set attempting to acquire!")
     if(a_lock.acquire()):
-        print("set acquired!")
         global set_point
         set_point = new_set_point
-        print(f"Set point is now {set_point}")
         a_lock.release()
-        print("set released!")
+
 
 def get_set_point():
     cur_set_point = 0
-    print("get attempting to acquire!")
     if(a_lock.acquire(True, 0.1)):
-        print("get acquire!")
         global set_point
         cur_set_point = set_point
         a_lock.release()
-        print("get release!")
         return cur_set_point
     else:
         return None
