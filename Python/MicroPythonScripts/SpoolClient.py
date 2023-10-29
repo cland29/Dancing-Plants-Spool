@@ -31,6 +31,9 @@ motor1.freq(50)
 set_point = 0
 a_lock = _thread.allocate_lock()
 enc_lock = _thread.allocate_lock()
+encoder_val = 0
+
+
 
 ### TEST  LIGHTS ###
 top_green = PWM(Pin(3))
@@ -51,7 +54,18 @@ for light in LED_list:
 duty_cycle = 65535
 ### _____________________ ###
 
-def update_encoder_value():
+def update_encoder_value(new_val):
+    pass
+    #if(enc_lock.acquire()):
+    #    encoder_val = new_val
+    #    enc_lock.release()
+
+def get_encoder_value():
+    if(enc_lock.acquire()):
+        temp = encoder_val
+        enc_lock.release()
+        return temp
+        
 
 def set_set_point(new_set_point):
     print("set attempting to acquire!")
@@ -80,16 +94,20 @@ def get_set_point():
 def updateMotorValues():
 
         goal = set_point#get_set_point()
-        motor_power = (goal - Qtr_Cntr) / 100 + 0.1
+        cur_pos = get_encoder_value()
+        motor_power = (goal - cur_pos) / 100 + 0.1
         setMotor(motor_power)
-        print(f"Setpoint: {goal} Encoder Value: {Qtr_Cntr} Error: {goal - Qtr_Cntr} Motor Power: {motor_power}")
+        print(f"Setpoint: {goal} Encoder Value: {cur_pos} Error: {goal - cur_pos} Motor Power: {motor_power}")
         
     
 def updateMotorValuesThread():
     print("Starting thread")
+    count = 0
     while not program_finished:
-        updateMotorValues()
-        #print("I'm running!")
+        #updateMotorValues()
+        count = count + 1
+        print(f"I'm running! {count}")
+        print(get_encoder_value())
         '''
         goal = set_point#get_set_point()
         print(goal, type(goal))
@@ -128,6 +146,7 @@ def Enc_Handler(Source):
         # 0 & 1 = CW rotation
         Enc_Counter += 1  #Increment counter by 1 - counts ALL transitions
         Qtr_Cntr = round(Enc_Counter/4)  #Calculate a new 1/4 counter value
+        update_encoder_value(Qtr_Cntr)
     elif (Enc_A_State == 1 and Enc_B_State_old == 1) or (Enc_A_State == 0 and Enc_B_State_old == 0):
         # this will be counter-clockwise rotation
         # A   B-old
@@ -135,6 +154,7 @@ def Enc_Handler(Source):
         # 0 & 0 = CCW rotation
         Enc_Counter -= 1 # Decrement counter by 1 - counts ALL transitions
         Qtr_Cntr = round(Enc_Counter/4)  #Calculate a new 1/4 counter value
+        update_encoder_value(Qtr_Cntr)
     else:  #if here, there is a combination we don't care about, ignore it, but track it for debugging
         error += 1
     Enc_A_State_old = Enc_A_State     # store the current encoder values as old values to be used as comparison in the next loop
@@ -247,7 +267,7 @@ def setMotor(motorPower):
 #end_program_button.when_pressed = end_program("test")
 
 try:
-    thread1 = _thread.start_new_thread(updateMotorValuesThread, ())
+    #thread1 = _thread.start_new_thread(updateMotorValuesThread, ())
     
     ip = connect(dance_router)
     
