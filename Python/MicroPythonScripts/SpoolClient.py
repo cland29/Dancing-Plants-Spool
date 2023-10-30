@@ -10,6 +10,9 @@ import _thread
 import utime
 import gc
 import select
+import math
+from rp2 import PIO, StateMachine, asm_pio
+from quadrature import encoder
 #import ipaddress
 #import wifi
 dance_router = {"ssid": 'NETGEAR80', 'password': 'yellowwater460'}
@@ -89,10 +92,14 @@ def get_set_point():
 def updateMotorValues():
 
         goal = set_point#get_set_point()
-        cur_pos = -Qtr_Cntr#get_encoder_value()
+        sm1.exec("in_(x, 32)")
+        cur_pos = sm1.get()
+        error = (goal - cur_pos)
         motor_power = (goal - cur_pos) / 1000 - 0.1
         setMotor(-motor_power)
-        print(f"Setpoint: {goal} Encoder Value: {cur_pos} Error: {goal - cur_pos} Motor Power: {motor_power}")
+        
+        #print(f"Setpoint: {goal} Encoder Value: {cur_pos} Error: {goal - cur_pos} Motor Power: {motor_power}")
+        return -motor_power, error
         
     
 def updateMotorValuesThread():
@@ -118,7 +125,7 @@ def updateMotorValuesThread():
 
 
 
-
+'''
 def Enc_Handler(Source):
     global Enc_Counter
     global Qtr_Cntr
@@ -170,7 +177,7 @@ Enc_Counter = 0
 Last_Qtr_Cntr = 0
 Qtr_Cntr = 0
 error = 0
-
+'''
 
 
 def connect(wifi: dict) -> str:
@@ -212,7 +219,9 @@ def connect_client():
     print("connected!")
     server_poll = select.poll()
     server_poll.register(client)
-
+    max_motor_power = 0
+    max_neg_motor_power = 0
+    max_error = 0
     while(True):    
         poll_results = server_poll.poll(100)[0]
         if (poll_results[1] == 5):
@@ -220,6 +229,7 @@ def connect_client():
             msg = msg_full.split(",")
             if not DISCONNECT_MESSAGE in msg:
                 #print(msg)
+                
                 set_set_point(int(msg[-2]))
                 print(get_set_point())
                 
@@ -227,9 +237,18 @@ def connect_client():
                 break
         else:
             pass
-        updateMotorValues()
+        motor_power, error = updateMotorValues()
+        if motor_power > max_motor_power:
+            max_motor_power = motor_power
+        if motor_power <  max_neg_motor_power:
+            max_neg_motor_power = motor_power
+        if math.fabs(error) > max_error:
+            max_error = math.fabs(error)
     send(client, DISCONNECT_MESSAGE)
     setMotor(0.0)
+    print(f"Max Motor Power: {max_motor_power}")
+    print(f"Max Negative Motor Power: {max_neg_motor_power}")
+    print(f"Max Error: {max_error}")
     utime.sleep(1)
     client.close()    
         
@@ -281,6 +300,9 @@ def setMotor(motorPower):
 
 
 #end_program_button.when_pressed = end_program("test")
+sm1 = StateMachine(1, encoder, freq=125_000_000, in_base=Pin(20), jmp_pin=Pin(19))
+sm1.active(1)
+
 
 try:
     #thread1 = _thread.start_new_thread(updateMotorValuesThread, ())
