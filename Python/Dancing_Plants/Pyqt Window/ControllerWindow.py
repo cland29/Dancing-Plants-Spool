@@ -54,8 +54,11 @@ class Position_Selector(QWidget):
         self.set_cur_pos()
 
     def set_cur_pos(self):
-        if (self.live_update_widget.checkState() == Qt.CheckState.Checked):
+        if (self.is_pos_live()):
             self.pos_update_func(self.cur_pos)
+
+    def is_pos_live(self) -> bool:
+        return self.live_update_widget.checkState() == Qt.CheckState.Checked
 
 
 
@@ -64,9 +67,7 @@ class Position_Selector(QWidget):
 class ControllerWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(ControllerWindow, self).__init__(*args, **kwargs)
-        self.pos1 = 0
-        self.pos2 = 0
-        self.pos3 = 0
+        self.pos_list = []
         self.initUI()
 
     def initUI(self):
