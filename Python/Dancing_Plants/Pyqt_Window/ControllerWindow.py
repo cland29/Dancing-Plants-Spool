@@ -4,6 +4,10 @@ from PyQt6.QtCore import *
 
 import time
 
+pos1 = 0
+pos2 = 0
+pos3 = 0
+
 class Position_Selector(QWidget):
     def __init__(self, min_pos, max_pos, step_size):
         super(Position_Selector, self).__init__()
@@ -55,9 +59,10 @@ class Position_Selector(QWidget):
 
 
 class ControllerWindow(QMainWindow):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, setting_func, *args, **kwargs):
         super(ControllerWindow, self).__init__(*args, **kwargs)
         self.pos_sel_widgets = []
+        self.setting_func = setting_func
         self.initUI()
 
     def initUI(self):
@@ -67,7 +72,7 @@ class ControllerWindow(QMainWindow):
             top_layout = QHBoxLayout()
 
             for i in range(3):
-                self.pos_sel_widgets.append(Position_Selector(0, 100, 2))
+                self.pos_sel_widgets.append(Position_Selector(-1000, 1000, 10))
                 top_layout.addWidget(self.pos_sel_widgets[i])
 
 
@@ -91,6 +96,11 @@ class ControllerWindow(QMainWindow):
             self.layout.addWidget(self.pos_list)
 
 
+            self.timer = QTimer(self)
+            self.timer.setInterval(20)
+            self.timer.timeout.connect(self.send_values)
+            self.timer.start()
+
 
 
             widget = QWidget()
@@ -107,6 +117,16 @@ class ControllerWindow(QMainWindow):
         for i in range(len(self.pos_sel_widgets)):
             self.pos_sel_widgets[i].change_pos(int(setpoint_val[i]))
 
+    def send_values(self):
+
+        pos = ""
+        pos_list = []
+        for i in range(len(self.pos_sel_widgets) - 1):
+            pos = pos + str(self.pos_sel_widgets[i].get_pos()) + ":"
+            pos_list.append(self.pos_sel_widgets[i].get_pos())
+        pos = pos + str(self.pos_sel_widgets[-1].get_pos())
+
+        self.setting_func(pos)
 
 
     def sav_full_pos(self):
@@ -123,7 +143,7 @@ class ControllerWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication([])
 
-    window = ControllerWindow()
+    window = ControllerWindow(print)
     window.show()
 
     app.exec()
