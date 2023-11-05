@@ -23,7 +23,7 @@ HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
-SERVER = "192.168.1.3"
+SERVER = "192.168.1.2"
 ADDR = (SERVER, PORT)
 
 program_finished = False
@@ -92,8 +92,8 @@ def get_set_point():
 def updateMotorValues():
 
         goal = set_point#get_set_point()
-        sm1.exec("in_(x, 32)")
-        cur_pos = sm1.get()
+
+        cur_pos = encoder.get_pos()
         error = (goal - cur_pos)
         motor_power = (goal - cur_pos) / 1000 - 0.1
         setMotor(-motor_power)
@@ -181,6 +181,7 @@ error = 0
 
 
 def connect(wifi: dict) -> str:
+    LED_list[0].duty_u16(duty_cycle)
     #Connect to WLAN
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
@@ -207,9 +208,11 @@ def connect(wifi: dict) -> str:
         pico_led.toggle()
         sleep(0.1)
     pico_led.off()
+    LED_list[0].duty_u16(0)
     return ip;
 
 def connect_client():
+    LED_list[1].duty_u16(duty_cycle)
     print(f"Trying to connect to {ADDR}")
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -235,8 +238,10 @@ def connect_client():
                 
             else:
                 break
+            LED_list[4].duty_u16(duty_cycle)
         else:
             pass
+            LED_list[4].duty_u16(0)
         motor_power, error = updateMotorValues()
         if motor_power > max_motor_power:
             max_motor_power = motor_power
@@ -250,7 +255,8 @@ def connect_client():
     print(f"Max Negative Motor Power: {max_neg_motor_power}")
     print(f"Max Error: {max_error}")
     utime.sleep(1)
-    client.close()    
+    client.close()
+    LED_list[1].duty_u16(0)
         
     
     
@@ -300,8 +306,10 @@ def setMotor(motorPower):
 
 
 #end_program_button.when_pressed = end_program("test")
-sm1 = StateMachine(1, encoder, freq=125_000_000, in_base=Pin(20), jmp_pin=Pin(19))
-sm1.active(1)
+encoder = quadrature_encoder(20, 19)
+for i in range(len(LED_list)):
+    LED_list[i].duty_u16(0)
+    
 
 
 try:
@@ -311,15 +319,20 @@ try:
     
     print(type(ip))
     connect_client()
+
+
     setMotor(0.0)
     
     program_finished = True
     
     utime.sleep(0.2)
     print("Goodnight all!")
+    LED_list[3].duty_u16(duty_cycle)
+    
     
     #connection = open_socket(ip)
     #serve(connection)
 except KeyboardInterrupt:
+    LED_list[5].duty_u16(duty_cycle)
     machine.reset()
     
