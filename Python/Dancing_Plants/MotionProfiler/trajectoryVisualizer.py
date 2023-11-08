@@ -26,6 +26,8 @@ from functools import partial
 
 import pandas as pd
 
+import DrawFunctions
+
 ## Initial pyOpengl set up from this tutorial: https://www.youtube.com/watch?v=lFFYmP528Mw
 
 vertex_src = '''
@@ -64,11 +66,7 @@ added_vertices = np.array(added_vertices)
 
 rot_angle = 0
 
-def Path():
-    glBegin(GL_LINE_STRIP)
-    for i in added_vertices:
-        glVertex3fv(i[:3])
-    glEnd()
+
 
 
 class MainWindow(QMainWindow):
@@ -153,12 +151,13 @@ class GLWidget(QOpenGLWidget):
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         # Cube()
-        Path()
+        DrawFunctions.path(added_vertices)
 
 app = QApplication(sys.argv)
 window = MainWindow()
 #window2 = GLWindow()
-window.resize(QSize(1200, 600))
+#window.resize(QSize(1200, 600))
+window.showMaximized()
 #window2.resize(QSize(800, 600))
 window.show()
 #window2.show()
