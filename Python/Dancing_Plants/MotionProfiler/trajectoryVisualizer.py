@@ -13,12 +13,13 @@ from PyQt6.QtGui import QSurfaceFormat
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QApplication
 #from PyQt6.QtOpenGL import QOpenGLWindow, QOpenGLVersionProfile
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
+#from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtOpenGL import *
+from PyQt6.QtOpenGLWidgets import *
 
 
 from functools import partial
@@ -70,7 +71,6 @@ def Path():
     glEnd()
 
 
-print(added_vertices)
 class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
@@ -102,8 +102,15 @@ class MainWindow(QMainWindow):
         save_button.pressed.connect(self.save_points)
         point_selectors_layout.addWidget(save_button)
 
+        full_layout = QHBoxLayout()
+        #self.opengl_widget = QOpenGLWindow
+        full_layout.addWidget(GLWidget())
+
+        full_layout.addLayout(point_selectors_layout)
+
+
         widget = QWidget()
-        widget.setLayout(point_selectors_layout)
+        widget.setLayout(full_layout)
         self.setCentralWidget(widget)
 
     def change_vector_array(self, val, x, y):
@@ -118,9 +125,12 @@ class MainWindow(QMainWindow):
         rot_angle = angle
 
 
-class GLWindow(QOpenGLWindow):
 
 
+class GLWidget(QOpenGLWidget):
+
+    def __init__(self):
+        super().__init__()
 
     def initializeGL(self):
         self.fmt = QOpenGLVersionProfile()
@@ -147,11 +157,11 @@ class GLWindow(QOpenGLWindow):
 
 app = QApplication(sys.argv)
 window = MainWindow()
-window2 = GLWindow()
-window.resize(QSize(400, 600))
-window2.resize(QSize(800, 600))
+#window2 = GLWindow()
+window.resize(QSize(1200, 600))
+#window2.resize(QSize(800, 600))
 window.show()
-window2.show()
+#window2.show()
 app.exec()
 
 
