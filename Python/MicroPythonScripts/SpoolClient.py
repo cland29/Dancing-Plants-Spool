@@ -12,7 +12,8 @@ import gc
 import select
 import math
 from rp2 import PIO, StateMachine, asm_pio
-from quadrature import encoder
+from quadrature import quadrature_encoder
+import identity
 #import ipaddress
 #import wifi
 dance_router = {"ssid": 'NETGEAR80', 'password': 'yellowwater460'}
@@ -23,7 +24,7 @@ HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
-SERVER = "192.168.1.2"
+SERVER = "192.168.1.3"
 ADDR = (SERVER, PORT)
 
 program_finished = False
@@ -95,7 +96,7 @@ def updateMotorValues():
 
         cur_pos = encoder.get_pos()
         error = (goal - cur_pos)
-        motor_power = (goal - cur_pos) / 1000 - 0.1
+        motor_power = (goal - cur_pos) / 1000 - 0.2
         setMotor(-motor_power)
         
         #print(f"Setpoint: {goal} Encoder Value: {cur_pos} Error: {goal - cur_pos} Motor Power: {motor_power}")
@@ -229,11 +230,14 @@ def connect_client():
         poll_results = server_poll.poll(100)[0]
         if (poll_results[1] == 5):
             msg_full = client.recv(2048).decode()
-            msg = msg_full.split(",")
+            msg = msg_full.split("|")
+            last_msg = msg[-2]
+            
+            
             if not DISCONNECT_MESSAGE in msg:
                 #print(msg)
-                
-                set_set_point(int(msg[-2]))
+                module_msg = last_msg.split(":")[identity.module_id]
+                set_set_point(int(module_msg))
                 print(get_set_point())
                 
             else:
@@ -294,8 +298,8 @@ end_program_button = Button(18)
 
 def setMotor(motorPower):
     #print(f"setting motor to: {motorPower}")
-    if (motorPower > 0.4): motorPower = 0.4
-    if (motorPower < -0.30): motorPower = -0.30
+    if (motorPower > 0.8): motorPower = 0.8
+    if (motorPower < -0.60): motorPower = -0.60
     
     max_duty_cycle_length = 65025
     freq = 50;
@@ -314,7 +318,7 @@ for i in range(len(LED_list)):
 
 try:
     #thread1 = _thread.start_new_thread(updateMotorValuesThread, ())
-    
+    print(f"Name: {identity.name}, ID: {identity.module_id}")
     ip = connect(dance_router)
     
     print(type(ip))
